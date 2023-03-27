@@ -66,6 +66,7 @@
           :initform (bt:make-lock)))
   (:default-initargs
    :merger nil
+   :acceptor nil
    :parallel t))
 
 (defclass flownet (fundamental-cell)

@@ -8,7 +8,7 @@
 (defgeneric sink-push (sink value))
 (defgeneric connected-pipes (sink))
 (defgeneric connect (sink pipe))
-(defgeneric lock (pipe))
+(defgeneric lock (object))
 
 (defgeneric sender (message))
 (defgeneric content (message))

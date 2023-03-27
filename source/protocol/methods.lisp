@@ -119,3 +119,9 @@
 
 (defmethod reset-input ((cell action-cell) merger)
   (setf (input cell) nil))
+
+(defmethod input-accepted-p ((action-cell action-cell)
+                             merger
+                             acceptor
+                             input)
+  t)
