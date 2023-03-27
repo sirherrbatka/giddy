@@ -77,6 +77,16 @@
       (cl-ds:put-back! (queue pipe) message))
     (react-to-message cell sender-cell message pipe)))
 
+(defmethod form-input ((cell action-cell)
+                       merger)
+  (let ((pipes (pipes cell)))
+    (when (null pipes)
+      (error 'no-pipes))
+    (cl-ds:mod-bind (container found value) (~> pipes first cl-ds:take-out-front!)
+      (if found
+          (setf (input cell) value)
+          nil))))
+
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
                              (message fundamental-message)

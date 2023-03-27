@@ -80,11 +80,12 @@
 (defclass fundamental-acceptor ()
   ())
 
-(define-condition unknown-channel ()
+(define-condition unknown-channel (error)
   ((%name :initarg :name
           :reader name))
   (:report
    (lambda (condition stream)
-     (format stream
-             "Channel ~a could not be found~%"
-             (name condition)))))
+     (format stream "Channel ~a could not be found~%" (name condition)))))
+
+(define-condition no-pipes (error)
+  ())
