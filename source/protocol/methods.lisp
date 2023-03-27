@@ -60,7 +60,8 @@
                           (pipe-names object)
                           :hash-table-value (lambda (pipe-name)
                                               (lret ((result (gethash pipe-name pipes)))
-                                                (assert result)))
+                                                (if (null result)
+                                                    (error 'unknown-channel :name pipe-name))))
                           :test 'eq)))
       (map nil #'connect-sink flownet-sinks)
       (setf (slot-value object '%pipes-hash-table) flownet-pipes

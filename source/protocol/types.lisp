@@ -79,3 +79,12 @@
 
 (defclass fundamental-acceptor ()
   ())
+
+(define-condition unknown-channel ()
+  ((%name :initarg :name
+          :reader name))
+  (:report
+   (lambda (condition stream)
+     (format stream
+             "Channel ~a could not be found~%"
+             (name condition)))))
