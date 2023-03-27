@@ -73,24 +73,37 @@
   (iterate
     (for pipe in-vector (connected-pipes sink))
     (for cell = (cell pipe))
-    (bt:with-lock-held ((lock pipe))
-      (cl-ds:put-back! (queue pipe) message))
-    (react-to-message cell sender-cell message pipe)))
+    (react-to-message cell sender-cell message sink pipe)))
 
 (defmethod form-input ((cell action-cell)
                        merger)
   (let ((pipes (pipes cell)))
-    (when (null pipes)
+    (when (endp pipes)
       (error 'no-pipes))
-    (cl-ds:mod-bind (container found value) (~> pipes first cl-ds:take-out-front!)
-      (if found
-          (setf (input cell) value)
-          nil))))
+    (bt:with-lock-held ((~> pipes first lock))
+      (cl-ds:mod-bind (container found value) (~> pipes first queue cl-ds:take-out-front!)
+        (if found
+            (setf (input cell) (content value))
+            nil)))))
+
+(defmethod form-input ((cell action-cell)
+                       merger)
+  (let ((pipes (pipes cell)))
+    (when (endp pipes)
+      (error 'no-pipes))
+    (bt:with-lock-held ((~> pipes first lock))
+      (cl-ds:mod-bind (container found value) (~> pipes first queue cl-ds:take-out-front!)
+        (if found
+            (setf (input cell) value)
+            nil)))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
-                             (message fundamental-message)
+                             (message content-message)
+                             (sink sink)
                              (pipe pipe))
+  (bt:with-lock-held ((lock pipe))
+    (cl-ds:put-back! (queue pipe) message))
   (flet ((impl ()
            (bt:with-lock-held ((lock receiver-cell))
              (let ((*cell* receiver-cell)
@@ -107,6 +120,13 @@
     (if (parallel receiver-cell)
         (lparallel:future (impl))
         (impl))))
+
+(defmethod react-to-message ((receiver-cell action-cell)
+                             sender-cell
+                             (message fundamental-message)
+                             (sink sink)
+                             (pipe pipe))
+  nil)
 
 (defmethod reset-input ((cell action-cell) merger)
   (setf (input cell) nil))

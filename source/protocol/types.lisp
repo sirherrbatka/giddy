@@ -65,6 +65,7 @@
    (%lock :reader lock
           :initform (bt:make-lock)))
   (:default-initargs
+   :merger nil
    :parallel t))
 
 (defclass parallel-action-cell (action-cell)

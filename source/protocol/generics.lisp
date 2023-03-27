@@ -21,7 +21,7 @@
 (defgeneric pipe-names (cell))
 
 (defgeneric send-message (sender-cell sink message))
-(defgeneric react-to-message (receiver-cell sender-cell message pipe))
+(defgeneric react-to-message (receiver-cell sender-cell message pipe sink))
 
 (defgeneric perform-action (action-cell input))
 (defgeneric form-input (action-cell merger))
