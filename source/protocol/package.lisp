@@ -5,4 +5,35 @@
    #:content-message
    #:channel
    #:control-message
-   #:flush-message))
+   #:flush-message
+   #:fundamental-cell
+   #:action-cell
+   #:flownet
+   #:fundamental-merger
+   #:fundamental-acceptor
+   #:unknown-channel
+   #:no-pipes
+
+   #:name
+   #:queue
+   #:pipes-lock
+   #:sink-push
+   #:connected-pipes
+   #:connect
+   #:lock
+   #:sender
+   #:content
+   #:sinks
+   #:sinks-hash-table
+   #:pipes-hash-table
+   #:pipes
+   #:sink-names
+   #:pipe-name
+   #:send-message
+   #:react-to-message
+   #:perform-action
+   #:form-input
+   #:input-accepted-p
+   #:acceptor
+   #:merger
+   ))

@@ -68,9 +68,6 @@
    :merger nil
    :parallel t))
 
-(defclass parallel-action-cell (action-cell)
-  ())
-
 (defclass flownet (fundamental-cell)
   ((%cells :reader cells
            :initarg :cells)))

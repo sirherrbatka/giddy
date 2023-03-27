@@ -21,7 +21,7 @@
 (defgeneric pipe-names (cell))
 
 (defgeneric send-message (sender-cell sink message))
-(defgeneric react-to-message (receiver-cell sender-cell message pipe sink))
+(defgeneric react-to-message (receiver-cell sender-cell message sink pipe))
 
 (defgeneric perform-action (action-cell input))
 (defgeneric form-input (action-cell merger))
@@ -29,5 +29,3 @@
 (defgeneric input-accepted-p (action-cell merger acceptor input))
 (defgeneric acceptor (action-cell))
 (defgeneric merger (action-cell))
-
-(defgeneric schedule-action (parallel-action-cell input))
