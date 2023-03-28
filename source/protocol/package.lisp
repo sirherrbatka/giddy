@@ -20,6 +20,7 @@
    #:sink-push
    #:connected-pipes
    #:connect
+   #:input
    #:lock
    #:sender
    #:content

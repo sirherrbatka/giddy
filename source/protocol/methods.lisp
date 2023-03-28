@@ -83,8 +83,10 @@
     (bt:with-lock-held ((~> pipes first lock))
       (cl-ds:mod-bind (container found value) (~> pipes first queue cl-ds:take-out-front!)
         (if found
-            (setf (input cell) (content value))
-            nil)))))
+            (progn
+              (setf (input cell) (content value))
+              (values t (list value)))
+            (values nil nil))))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
@@ -95,8 +97,9 @@
     (cl-ds:put-back! (queue pipe) message))
   (flet ((impl ()
            (bt:with-lock-held ((lock receiver-cell))
-             (let ((*cell* receiver-cell)
-                   (input-formed (form-input receiver-cell (merger receiver-cell))))
+             (bind ((*cell* receiver-cell)
+                    ((:values input-formed messages)
+                     (form-input receiver-cell (merger receiver-cell))))
                (if input-formed
                    (unwind-protect
                         (if (input-accepted-p receiver-cell

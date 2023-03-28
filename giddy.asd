@@ -17,5 +17,8 @@
                              (:file "types")
                              (:file "utils")
                              (:file "functions")
-                             (:file "methods")
-                             ))))
+                             (:file "methods")))
+               (:module "api"
+                :components ((:file "package")
+                             (:file "types")
+                             (:file "methods")))))
