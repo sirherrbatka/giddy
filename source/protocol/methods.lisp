@@ -102,12 +102,17 @@
                      (form-input receiver-cell (merger receiver-cell))))
                (if input-formed
                    (unwind-protect
-                        (if (input-accepted-p receiver-cell
-                                              (merger receiver-cell)
-                                              (acceptor receiver-cell)
-                                              (input receiver-cell))
-                            (perform-action receiver-cell (input receiver-cell)))
-                     (reset-input receiver-cell (merger receiver-cell)))
+                        (let ((decision (input-accepted-p receiver-cell
+                                                       (merger receiver-cell)
+                                                       (acceptor receiver-cell)
+                                                       (input receiver-cell))))
+                          (econd ((eq decision :accept)
+                                  (perform-action receiver-cell (input receiver-cell))
+                                  (reset-input receiver-cell (merger receiver-cell)))
+                                 ((eq decision :reject)
+                                  (reset-input receiver-cell (merger receiver-cell)))
+                                 ((eq decision :wait)
+                                  nil))))
                    nil)))))
     (if (parallel receiver-cell)
         (lparallel:future (impl))
@@ -127,4 +132,4 @@
                              merger
                              acceptor
                              input)
-  t)
+  :accept)
