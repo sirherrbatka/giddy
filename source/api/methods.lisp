@@ -13,7 +13,7 @@
          (let* ((messages '())
                 (input (make-hash-table :test 'eq)))
            (when (endp pipes)
-             (error 'no-pipes))
+             (error 'protocol:no-pipes))
            (iterate
              (for pipe in pipes)
              (for pipe-name = (protocol:name pipe))
@@ -24,6 +24,7 @@
                (push value messages)
                (push (protocol:content value) (gethash pipe-name input))))
            (setf (protocol:input cell) (apply (implementation merger)
+                                              (protocol:input cell)
                                               (hash-table-plist input)))
            (map nil
              (lambda (pipe queue) (setf (protocol:queue pipe) queue))

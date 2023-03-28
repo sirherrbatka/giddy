@@ -12,6 +12,7 @@
    #:fundamental-merger
    #:fundamental-acceptor
    #:unknown-channel
+   #:configuration-error
    #:no-pipes
 
    #:name
