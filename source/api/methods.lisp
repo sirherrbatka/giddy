@@ -11,8 +11,7 @@
                          pipes)))
     (unwind-protect
          (let* ((messages '())
-                (input (or (protocol:input cell)
-                           (make-hash-table :test 'eq))))
+                (input (make-hash-table :test 'eq)))
            (when (endp pipes)
              (error 'no-pipes))
            (iterate
@@ -20,14 +19,15 @@
              (for pipe-name = (protocol:name pipe))
              (for queue in queues)
              (cl-ds:mod-bind (container found value) (cl-ds:take-out-front! queue)
-               (when found
-                 (push value messages)
-                 (push (protocol:content value) (gethash pipe-name input)))))
-           (setf (protocol:input cell) input)
-           (return-from protocol:form-input (values t messages)))
-      (progn
-        (map nil
+               (unless found
+                 (return-from protocol:form-input (values nil messages)))
+               (push value messages)
+               (push (protocol:content value) (gethash pipe-name input))))
+           (setf (protocol:input cell) (apply (implementation merger)
+                                              (hash-table-plist input)))
+           (map nil
              (lambda (pipe queue) (setf (protocol:queue pipe) queue))
              pipes
              queues)
-        (map nil #'bt:release-lock locks)))))
+           (return-from protocol:form-input (values messages messages)))
+      (map nil #'bt:release-lock locks))))

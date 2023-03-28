@@ -2,4 +2,4 @@
   (:use #:giddy.aux-package #:cl)
   (:local-nicknames (#:protocol #:giddy.protocol))
   (:export
-   ))
+   #:list-merger))
