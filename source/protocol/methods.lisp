@@ -93,8 +93,6 @@
                              (message flush-message)
                              (sink sink)
                              (pipe pipe))
-  (bt:with-lock-held ((lock pipe))
-    (cl-ds:put-back! (queue pipe) message))
   (flet ((impl (&aux messages)
            (unwind-protect
                 (bt:with-lock-held ((lock receiver-cell))
