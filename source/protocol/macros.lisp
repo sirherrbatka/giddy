@@ -9,7 +9,7 @@
             (,!read-thread
               (bt:make-thread (lambda ()
                                 (iterate
-                                  (with lock = (bt:with-lock-held))
+                                  (with lock = (bt:make-lock))
                                   (until (bt:with-lock-held ((lock ,!flownet))
                                            (endp (active-cells))))
                                   (bt:condition-wait (condition-variable ,!flownet) lock))))))

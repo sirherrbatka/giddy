@@ -31,3 +31,8 @@
 (defgeneric merger (action-cell))
 (defgeneric notify-end (cell))
 (defgeneric remove-active-cell (flownet cell))
+
+(defgeneric active-cells (flownet))
+(defgeneric (setf active-cells) (new-value flownet))
+
+(defgeneric condition-variable (flownet))

@@ -101,7 +101,7 @@
 
 (defmethod remove-active-cell ((flownet flownet) cell)
   (bt:with-lock-held ((lock flownet))
-    (setf #1=(active-cells flownet) (remove cell #1#)))
+    (setf #1=(active-cells flownet) (remove cell #1# :test 'eq)))
   (bt:condition-notify (condition-variable flownet)))
 
 (defmethod react-to-message ((receiver-cell action-cell)
