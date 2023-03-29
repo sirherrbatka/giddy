@@ -94,36 +94,23 @@
                              (message flush-message)
                              (sink sink)
                              (pipe pipe))
-  (flet ((impl (&aux messages)
-           (unwind-protect
-                (bt:with-lock-held ((lock receiver-cell))
-                  (handler-case
-                      (bind ((*cell* receiver-cell)
-                             ((:values input-formed m)
-                              (form-input receiver-cell (merger receiver-cell))))
-                        (setf messages m)
-                        (if input-formed
-                            (let ((decision (input-accepted-p receiver-cell
-                                                              (merger receiver-cell)
-                                                              (acceptor receiver-cell)
-                                                              (input receiver-cell))))
-                              (econd ((eq decision :accept)
-                                      (perform-action receiver-cell (input receiver-cell))
-                                      (reset-input receiver-cell (merger receiver-cell)))
-                                     ((eq decision :reject)
-                                      (reset-input receiver-cell (merger receiver-cell)))
-                                     ((eq decision :wait)
-                                      (reset-input receiver-cell (merger receiver-cell)))))
-                            nil))
-                    (configuration-error (e) (declare (ignore e))
-                      nil)))
-             (iterate
-               (for sink in (sinks receiver-cell))
-               (send-message receiver-cell sink message)))))
-    (if (parallel receiver-cell)
-        (lparallel.queue:push-queue (lparallel:future (impl))
-                                    (tasks (flownet receiver-cell)))
-        (impl))))
+  (flush receiver-cell message))
+
+(defmethod notify-end ((cell fundamental-cell))
+  (remove-active-cell (flownet cell) cell))
+
+(defmethod remove-active-cell ((flownet flownet) cell)
+  (bt:with-lock-held ((lock flownet))
+    (setf #1=(active-cells flownet) (remove cell #1#)))
+  (bt:condition-notify (condition-variable flownet)))
+
+(defmethod react-to-message ((receiver-cell action-cell)
+                             sender-cell
+                             (message end-message)
+                             (sink sink)
+                             (pipe pipe))
+  (flush receiver-cell message
+         (lambda () (notify-end receiver-cell))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
@@ -155,8 +142,7 @@
                (configuration-error (e) (declare (ignore e))
                  nil)))))
     (if (parallel receiver-cell)
-        (lparallel.queue:push-queue (lparallel:future (impl))
-                                    (tasks (flownet receiver-cell)))
+        (lparallel:future (impl))
         (impl))))
 
 (defmethod react-to-message ((receiver-cell action-cell)

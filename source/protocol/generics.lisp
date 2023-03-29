@@ -29,3 +29,5 @@
 (defgeneric input-accepted-p (action-cell merger acceptor input))
 (defgeneric acceptor (action-cell))
 (defgeneric merger (action-cell))
+(defgeneric notify-end (cell))
+(defgeneric remove-active-cell (flownet cell))

@@ -20,6 +20,9 @@
 (defclass flush-message (control-message)
   ())
 
+(defclass end-message (control-message)
+  ())
+
 (defclass channel ()
   ((%name :initarg :name
           :reader name)
@@ -74,8 +77,12 @@
 (defclass flownet (fundamental-cell)
   ((%cells :reader cells
            :initarg :cells)
-   (%tasks :reader tasks
-           :initform (lparallel.queue:make-queue))))
+   (%active-cells :accessor active-cells
+                  :initarg :cells)
+   (%lock :initform (bt:make-lock)
+          :reader lock)
+   (%condition-variable :initform (bt:make-condition-variable)
+                        :reader condition-variable)))
 
 (defclass fundamental-merger ()
   ())

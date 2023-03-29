@@ -1,15 +1,19 @@
 (cl:in-package #:giddy.protocol)
 
 
-(defmacro with-flownet ((flownet-form) &body body)
-  (with-gensyms (!read-thread)
+(defmacro with-flownet ((flownet-form)
+                        &body body)
+  (with-gensyms (!read-thread !flownet)
     `(let* ((*flownet* ,flownet-form)
-            (tasks (tasks *flownet*))
+            (,!flownet *flownet*)
             (,!read-thread
               (bt:make-thread (lambda ()
                                 (iterate
-                                  (for task = (lparallel.queue:pop-queue tasks))
-                                  (lparallel:force task))))))
+                                  (with lock = (bt:with-lock-held))
+                                  (until (bt:with-lock-held ((lock ,!flownet))
+                                           (endp (active-cells))))
+                                  (bt:condition-wait (condition-variable ,!flownet) lock))))))
        (unwind-protect
             ,@body
-         (bt:join-thread ,!read-thread)))))
+         (bt:join-thread ,!read-thread))
+       *flownet*)))
