@@ -35,19 +35,21 @@
 (defclass pipe (channel)
   ((%queue :initarg :queue
            :accessor queue)
-   (%lock :initarg :lock
+   (%lock :initform (bt:make-lock)
           :reader lock))
   (:default-initargs
-   :lock (bt:make-lock)
    :queue (cl-ds.queues.2-3-tree:make-transactional-2-3-queue)))
 
 (defclass fundamental-cell ()
-  ((%sinks :reader sinks)
+  ((%flownet :initarg :flownet
+             :accessor flownet)
+   (%sinks :reader sinks)
    (%pipes :reader pipes)
    (%sink-names :reader sink-names)
    (%pipe-names :reader pipe-names)
    (%sinks-hash-table :reader sinks-hash-table)
-   (%pipes-hash-table :reader pipes-hash-table)))
+   (%pipes-hash-table :reader pipes-hash-table))
+  (:default-initargs :flownet nil))
 
 (defclass action-cell (fundamental-cell)
   ((%sink-names :initarg :sink-names
@@ -71,7 +73,9 @@
 
 (defclass flownet (fundamental-cell)
   ((%cells :reader cells
-           :initarg :cells)))
+           :initarg :cells)
+   (%tasks :reader tasks
+           :initform (lparallel.queue:make-queue))))
 
 (defclass fundamental-merger ()
   ())

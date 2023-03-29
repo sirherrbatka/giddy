@@ -14,6 +14,7 @@
    #:unknown-channel
    #:configuration-error
    #:no-pipes
+   #:with-flownet
 
    #:name
    #:queue

@@ -45,6 +45,7 @@
             (connect sink pipe))))
     (iterate
       (for cell in (cells object))
+      (setf (flownet cell) object)
       (iterate
         (for sink in (sinks cell))
         (for sink-name = (name sink))
@@ -120,7 +121,8 @@
                (for sink in (sinks receiver-cell))
                (send-message receiver-cell sink message)))))
     (if (parallel receiver-cell)
-        (lparallel:future (impl))
+        (lparallel.queue:push-queue (lparallel:future (impl))
+                                    (tasks (flownet receiver-cell)))
         (impl))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
@@ -153,7 +155,8 @@
                (configuration-error (e) (declare (ignore e))
                  nil)))))
     (if (parallel receiver-cell)
-        (lparallel:future (impl))
+        (lparallel.queue:push-queue (lparallel:future (impl))
+                                    (tasks (flownet receiver-cell)))
         (impl))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
