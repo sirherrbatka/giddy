@@ -110,10 +110,10 @@
                              (sink sink)
                              (pipe pipe))
   (flet ((impl (&aux messages)
-           (unwind-protect
-                (bt:with-lock-held ((lock receiver-cell))
-                  (when (shiftf (gethash pipe (finished-channels receiver-cell)) t)
-                    (return-from impl nil))
+           (bt:with-lock-held ((lock receiver-cell))
+             (when (shiftf (gethash pipe (finished-channels receiver-cell)) t)
+               (return-from impl nil))
+             (unwind-protect
                   (iterate
                     (handler-case
                         (bind ((*cell* receiver-cell)
@@ -137,8 +137,10 @@
                             (for sink in (sinks receiver-cell))
                             (send-message receiver-cell sink message)))
                       (configuration-error (e) (declare (ignore e))
-                        nil))))
-             (notify-end receiver-cell))))
+                        nil)))
+               (when (= (~> receiver-cell finished-channels hash-table-count)
+                        (~> receiver-cell pipes length))
+                 (notify-end receiver-cell))))))
     (if (parallel receiver-cell)
         (lparallel:future (impl))
         (impl))))
