@@ -114,11 +114,11 @@
                 (bt:with-lock-held ((lock receiver-cell))
                   (when (shiftf (gethash pipe (ended-channels receiver-cell)) t)
                     (return-from impl nil))
-                  (handler-case
-                      (bind ((*cell* receiver-cell)
-                             ((:values input-formed m)
-                              (form-input receiver-cell (merger receiver-cell))))
-                        (iterate
+                  (iterate
+                    (handler-case
+                        (bind ((*cell* receiver-cell)
+                               ((:values input-formed m)
+                                (form-input receiver-cell (merger receiver-cell))))
                           (setf messages m)
                           (if input-formed
                               (let ((decision (input-accepted-p receiver-cell
@@ -135,9 +135,9 @@
                               (finish))
                           (iterate
                             (for sink in (sinks receiver-cell))
-                            (send-message receiver-cell sink message))))
-                    (configuration-error (e) (declare (ignore e))
-                      nil)))
+                            (send-message receiver-cell sink message)))
+                      (configuration-error (e) (declare (ignore e))
+                        nil))))
              (notify-end receiver-cell))))
     (if (parallel receiver-cell)
         (lparallel:future (impl))
