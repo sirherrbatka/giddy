@@ -112,7 +112,7 @@
   (flet ((impl (&aux messages)
            (unwind-protect
                 (bt:with-lock-held ((lock receiver-cell))
-                  (when (shiftf (gethash pipe (ended-channels receiver-cell)) t)
+                  (when (shiftf (gethash pipe (finished-channels receiver-cell)) t)
                     (return-from impl nil))
                   (iterate
                     (handler-case

@@ -67,8 +67,8 @@
            :initform nil)
    (%parallel :initarg :parallel
               :reader parallel)
-   (%ended-channels :initform (make-hash-table :test 'eq)
-                    :reader ended-channels)
+   (%finished-channels :initform (make-hash-table :test 'eq)
+                       :reader finished-channels)
    (%lock :reader lock
           :initform (bt:make-lock)))
   (:default-initargs
