@@ -109,8 +109,37 @@
                              (message end-message)
                              (sink sink)
                              (pipe pipe))
-  (flush receiver-cell message
-         (lambda () (notify-end receiver-cell))))
+  (flet ((impl (&aux messages)
+           (unwind-protect
+                (bt:with-lock-held ((lock receiver-cell))
+                  (handler-case
+                      (bind ((*cell* receiver-cell)
+                             ((:values input-formed m)
+                              (form-input receiver-cell (merger receiver-cell))))
+                        (iterate
+                          (setf messages m)
+                          (if input-formed
+                              (let ((decision (input-accepted-p receiver-cell
+                                                                (merger receiver-cell)
+                                                                (acceptor receiver-cell)
+                                                                (input receiver-cell))))
+                                (econd ((eq decision :accept)
+                                        (perform-action receiver-cell (input receiver-cell))
+                                        (reset-input receiver-cell (merger receiver-cell)))
+                                       ((eq decision :reject)
+                                        (reset-input receiver-cell (merger receiver-cell)))
+                                       ((eq decision :wait)
+                                        (reset-input receiver-cell (merger receiver-cell)))))
+                              (finish))
+                          (iterate
+                            (for sink in (sinks receiver-cell))
+                            (send-message receiver-cell sink message))))
+                    (configuration-error (e) (declare (ignore e))
+                      nil)))
+             (notify-end receiver-cell))))
+    (if (parallel receiver-cell)
+        (lparallel:future (impl))
+        (impl))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
