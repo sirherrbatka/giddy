@@ -68,6 +68,11 @@
       (setf (slot-value object '%pipes-hash-table) flownet-pipes
             (slot-value object '%pipes) (hash-table-values flownet-pipes)))))
 
+(defmethod connect ((sink sink) (pipe pipe))
+  (vector-push-extend sink (connected-sinks pipe))
+  (vector-push-extend pipe (connected-pipes sink))
+  nil)
+
 (defmethod send-message ((sender-cell fundamental-cell)
                          sink
                          message)

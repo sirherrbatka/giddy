@@ -7,6 +7,7 @@
 (defgeneric pipes-lock (cell))
 (defgeneric sink-push (sink value))
 (defgeneric connected-pipes (sink))
+(defgeneric connected-sinks (pipe))
 (defgeneric connect (sink pipe))
 (defgeneric lock (object))
 

@@ -38,9 +38,12 @@
 (defclass pipe (channel)
   ((%queue :initarg :queue
            :accessor queue)
+   (%connected-sinks :reader connected-sinks
+                     :initarg :connected-sinks)
    (%lock :initform (bt:make-lock)
           :reader lock))
   (:default-initargs
+   :connected-sinks (vect)
    :queue (cl-ds.queues.2-3-tree:make-transactional-2-3-queue)))
 
 (defclass fundamental-cell ()
