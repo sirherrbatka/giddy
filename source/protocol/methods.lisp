@@ -116,7 +116,7 @@
                              (pipe pipe))
   (flet ((impl (&aux messages)
            (bt:with-lock-held ((lock receiver-cell))
-             (when (shiftf (gethash pipe (finished-channels receiver-cell)) t)
+             (when (shiftf (gethash (cons pipe sink) (finished-channels receiver-cell)) t)
                (return-from impl nil))
              (unwind-protect
                   (iterate
@@ -144,7 +144,7 @@
                       (configuration-error (e) (declare (ignore e))
                         nil)))
                (when (= (~> receiver-cell finished-channels hash-table-count)
-                        (~> receiver-cell pipes length))
+                        (reduce #'+ (pipes receiver-cell) :key (compose #'length #'connected-sinks)))
                  (notify-end receiver-cell))))))
     (if (parallel receiver-cell)
         (lparallel:future (impl))
