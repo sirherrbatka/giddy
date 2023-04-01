@@ -36,15 +36,10 @@
    :connected-pipes (vect)))
 
 (defclass pipe (channel)
-  ((%queue :initarg :queue
-           :accessor queue)
-   (%connected-sinks :reader connected-sinks
-                     :initarg :connected-sinks)
-   (%lock :initform (bt:make-lock)
-          :reader lock))
+  ((%connected-sinks :reader connected-sinks
+                     :initarg :connected-sinks))
   (:default-initargs
-   :connected-sinks (vect)
-   :queue (cl-ds.queues.2-3-tree:make-transactional-2-3-queue)))
+   :connected-sinks (vect)))
 
 (defclass fundamental-cell ()
   ((%flownet :initarg :flownet
@@ -68,16 +63,15 @@
             :initarg :merger)
    (%input :accessor input
            :initform nil)
-   (%parallel :initarg :parallel
-              :reader parallel)
    (%finished-channels :initform (make-hash-table :test 'equal)
                        :reader finished-channels)
+   (%queue :initform (lparallel.queue:make-queue)
+           :reader queue)
    (%lock :reader lock
           :initform (bt:make-lock)))
   (:default-initargs
    :merger nil
-   :acceptor nil
-   :parallel t))
+   :acceptor nil))
 
 (defclass flownet (fundamental-cell)
   ((%cells :reader cells

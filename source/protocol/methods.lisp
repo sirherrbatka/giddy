@@ -82,24 +82,48 @@
     (react-to-message cell sender-cell message sink pipe)))
 
 (defmethod form-input ((cell action-cell)
-                       merger)
-  (let ((pipes (pipes cell)))
-    (when (endp pipes)
-      (error 'no-pipes))
-    (bt:with-lock-held ((~> pipes first lock))
-      (cl-ds:mod-bind (container found value) (~> pipes first queue cl-ds:take-out-front!)
-        (if found
-            (progn
-              (setf (input cell) (content value))
-              (values t (list value)))
-            (values nil nil))))))
+                       merger
+                       &optional (message nil message-p)
+                         sink
+                         pipe)
+  (declare (ignore sink pipe))
+  (if message-p
+      (values nil nil '())
+      (values (content message) t (list message))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
                              (message flush-message)
                              (sink sink)
                              (pipe pipe))
-  (flush receiver-cell message))
+  (flet ((impl (&aux messages)
+           (unwind-protect
+                (bt:with-lock-held ((lock receiver-cell))
+                  (handler-case
+                      (bind ((*cell* receiver-cell)
+                             ((:values input input-formed m)
+                              (form-input receiver-cell (merger receiver-cell))))
+                        (setf messages m)
+                        (if input-formed
+                            (let ((decision (input-accepted-p receiver-cell
+                                                              (merger receiver-cell)
+                                                              (acceptor receiver-cell)
+                                                              input)))
+                              (econd ((eq decision :accept)
+                                      (perform-action receiver-cell (input receiver-cell))
+                                      (reset-input receiver-cell (merger receiver-cell)))
+                                     ((eq decision :reject)
+                                      (reset-input receiver-cell (merger receiver-cell)))
+                                     ((eq decision :wait)
+                                      (reset-input receiver-cell (merger receiver-cell)))))
+                            nil))
+                    (configuration-error (e) (declare (ignore e))
+                      nil)))
+             (iterate
+               (for sink in (sinks receiver-cell))
+               (send-message receiver-cell sink message))
+             (funcall more))))
+    (lparallel.queue:push-queue #'impl (queue receiver-cell))))
 
 (defmethod notify-end ((cell fundamental-cell))
   (remove-active-cell (flownet cell) cell))
@@ -114,22 +138,23 @@
                              (message end-message)
                              (sink sink)
                              (pipe pipe))
+  (bt:with-lock-held ((lock receiver-cell))
+    (when (shiftf (gethash (cons pipe sink) (finished-channels receiver-cell)) t)
+      (return-from react-to-message nil)))
   (flet ((impl (&aux messages)
            (bt:with-lock-held ((lock receiver-cell))
-             (when (shiftf (gethash (cons pipe sink) (finished-channels receiver-cell)) t)
-               (return-from impl nil))
              (unwind-protect
                   (iterate
                     (handler-case
                         (bind ((*cell* receiver-cell)
-                               ((:values input-formed m)
+                               ((:values input input-formed m)
                                 (form-input receiver-cell (merger receiver-cell))))
                           (setf messages m)
                           (if input-formed
                               (let ((decision (input-accepted-p receiver-cell
                                                                 (merger receiver-cell)
                                                                 (acceptor receiver-cell)
-                                                                (input receiver-cell))))
+                                                                input)))
                                 (econd ((eq decision :accept)
                                         (perform-action receiver-cell (input receiver-cell))
                                         (reset-input receiver-cell (merger receiver-cell)))
@@ -146,23 +171,22 @@
                (when (= (~> receiver-cell finished-channels hash-table-count)
                         (reduce #'+ (pipes receiver-cell) :key (compose #'length #'connected-sinks)))
                  (notify-end receiver-cell))))))
-    (if (parallel receiver-cell)
-        (lparallel:future (impl))
-        (impl))))
+    (lparallel.queue:push-queue #'impl (queue receiver-cell))
+    (lparallel.queue:push-queue nil (queue receiver-cell))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
                              (message content-message)
                              (sink sink)
                              (pipe pipe))
-  (bt:with-lock-held ((lock pipe))
-    (cl-ds:put-back! (queue pipe) message))
   (flet ((impl (&aux messages)
            (bt:with-lock-held ((lock receiver-cell))
              (handler-case
                  (bind ((*cell* receiver-cell)
                         ((:values input-formed m)
-                         (form-input receiver-cell (merger receiver-cell))))
+                         (form-input receiver-cell
+                                     (merger receiver-cell)
+                                     message)))
                    (setf messages m)
                    (if input-formed
                        (let ((decision (input-accepted-p receiver-cell
@@ -179,9 +203,7 @@
                        nil))
                (configuration-error (e) (declare (ignore e))
                  nil)))))
-    (if (parallel receiver-cell)
-        (lparallel:future (impl))
-        (impl))))
+    (lparallel.queue:push-queue #'impl (queue receiver-cell))))
 
 (defmethod react-to-message ((receiver-cell action-cell)
                              sender-cell
