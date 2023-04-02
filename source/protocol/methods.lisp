@@ -224,3 +224,13 @@
                              acceptor
                              input)
   :accept)
+
+(defmethod sink ((cell fundamental-cell)
+                 name)
+  (or (gethash name (sinks-hash-table cell))
+      (error 'no-such-sink :name name)))
+
+(defmethod pipe ((cell fundamental-cell)
+                 name)
+  (or (gethash name (pipes-hash-table cell))
+      (error 'no-such-pipe :name name)))

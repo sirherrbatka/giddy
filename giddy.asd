@@ -20,5 +20,7 @@
                              (:file "methods")))
                (:module "api"
                 :components ((:file "package")
+                             (:file "generics")
                              (:file "types")
-                             (:file "methods")))))
+                             (:file "methods")
+                             (:file "functions")))))

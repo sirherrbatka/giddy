@@ -37,3 +37,5 @@
 (defgeneric (setf active-cells) (new-value flownet))
 
 (defgeneric condition-variable (flownet))
+(defgeneric sink (cell name))
+(defgeneric pipe (cell name))

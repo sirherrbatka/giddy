@@ -1,6 +1,7 @@
 (cl:defpackage #:giddy.protocol
   (:use #:cl #:giddy.aux-package)
   (:export
+   #:*cell*
    #:fundamental-message
    #:content-message
    #:channel
@@ -16,6 +17,10 @@
    #:no-pipes
    #:with-flownet
 
+   #:sink
+   #:pipe
+   #:no-such-sink
+   #:no-such-pipe
    #:name
    #:queue
    #:pipes-lock

@@ -5,3 +5,8 @@
   ((%implementation :initarg :implementation
                     :reader implementation))
   (:default-initargs :implementation #'identity))
+
+(defclass collecting-cell (protocol:action-cell)
+  ((%result :initarg :resut
+            :reader result))
+  (:default-initargs :result (vect)))

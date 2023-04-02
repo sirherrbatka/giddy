@@ -9,10 +9,7 @@
 
 (defclass content-message (fundamental-message)
   ((%content :initarg :content
-             :reader content)
-   (%attributes :initarg :attributes
-                :initform nil
-                :reader attributes)))
+             :reader content)))
 
 (defclass control-message (fundamental-message)
   ())
@@ -101,3 +98,11 @@
 
 (define-condition no-pipes (configuration-error)
   ())
+
+(define-condition no-such-sink (error)
+  ((%name :initarg :name
+          :reader name)))
+
+(define-condition no-such-pipe (error)
+  ((%name :initarg :name
+          :reader name)))

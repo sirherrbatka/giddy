@@ -21,3 +21,7 @@
           t)
         (values (~> input.messages car hash-table-plist) t (cdr input.messages))
         (values nil nil nil))))
+
+(defmethod protocol:perform-action ((cell collecting-cell) merger input)
+  (vector-push-extend input (result cell))
+  t)
