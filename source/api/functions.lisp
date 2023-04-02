@@ -10,6 +10,12 @@
                                  :sender cell
                                  :connection-name name))))
 
+(defun send (name message)
+  (let* ((cell protocol:*flownet*))
+    (protocol:send-message cell
+                           (protocol:sink cell name)
+                           message)))
+
 (defmethod reset-input (&aux (cell protocol:*cell*))
   (protocol:reset-input cell (protocol:merger cell)))
 

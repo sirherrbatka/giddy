@@ -2,6 +2,7 @@
   (:use #:cl #:giddy.aux-package)
   (:export
    #:*cell*
+   #:*flownet*
    #:fundamental-message
    #:content-message
    #:channel
