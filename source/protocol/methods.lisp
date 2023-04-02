@@ -98,7 +98,7 @@
                              (pipe pipe))
   (flet ((impl (&aux messages)
            (unwind-protect
-                (bt:with-lock-held ((lock receiver-cell))
+                (iterate
                   (handler-case
                       (bind ((*cell* receiver-cell)
                              ((:values input input-formed m)
@@ -110,19 +110,21 @@
                                                               (acceptor receiver-cell)
                                                               input)))
                               (econd ((eq decision :accept)
-                                      (perform-action receiver-cell (input receiver-cell))
-                                      (reset-input receiver-cell (merger receiver-cell)))
+                                      (when (perform-action receiver-cell (input receiver-cell))
+                                        (reset-input receiver-cell (merger receiver-cell))))
                                      ((eq decision :reject)
                                       (reset-input receiver-cell (merger receiver-cell)))
                                      ((eq decision :wait)
                                       (reset-input receiver-cell (merger receiver-cell)))))
-                            nil))
+                            (finish))
+                        (iterate
+                          (for sink in (sinks receiver-cell))
+                          (send-message receiver-cell sink message)))
                     (configuration-error (e) (declare (ignore e))
                       nil)))
              (iterate
                (for sink in (sinks receiver-cell))
-               (send-message receiver-cell sink message))
-             (funcall more))))
+               (send-message receiver-cell sink message)))))
     (lparallel.queue:push-queue #'impl (queue receiver-cell))))
 
 (defmethod notify-end ((cell fundamental-cell))
@@ -141,36 +143,37 @@
   (bt:with-lock-held ((lock receiver-cell))
     (when (shiftf (gethash (cons pipe sink) (finished-channels receiver-cell)) t)
       (return-from react-to-message nil)))
-  (flet ((impl (&aux messages)
-           (bt:with-lock-held ((lock receiver-cell))
-             (unwind-protect
-                  (iterate
-                    (handler-case
-                        (bind ((*cell* receiver-cell)
-                               ((:values input input-formed m)
-                                (form-input receiver-cell (merger receiver-cell))))
-                          (setf messages m)
-                          (if input-formed
-                              (let ((decision (input-accepted-p receiver-cell
-                                                                (merger receiver-cell)
-                                                                (acceptor receiver-cell)
-                                                                input)))
-                                (econd ((eq decision :accept)
-                                        (perform-action receiver-cell (input receiver-cell))
-                                        (reset-input receiver-cell (merger receiver-cell)))
-                                       ((eq decision :reject)
-                                        (reset-input receiver-cell (merger receiver-cell)))
-                                       ((eq decision :wait)
-                                        (reset-input receiver-cell (merger receiver-cell)))))
-                              (finish))
-                          (iterate
-                            (for sink in (sinks receiver-cell))
-                            (send-message receiver-cell sink message)))
-                      (configuration-error (e) (declare (ignore e))
-                        nil)))
-               (when (= (~> receiver-cell finished-channels hash-table-count)
-                        (reduce #'+ (pipes receiver-cell) :key (compose #'length #'connected-sinks)))
-                 (notify-end receiver-cell))))))
+  (flet ((impl (messages)
+           (unwind-protect
+                (iterate
+                  (handler-case
+                      (bind ((*cell* receiver-cell)
+                             ((:values input input-formed m)
+                              (form-input receiver-cell (merger receiver-cell))))
+                        (setf messages m)
+                        (if input-formed
+                            (let ((decision (input-accepted-p receiver-cell
+                                                              (merger receiver-cell)
+                                                              (acceptor receiver-cell)
+                                                              input)))
+                              (econd ((eq decision :accept)
+                                      (when (perform-action receiver-cell
+                                                            (merger receiver-cell)
+                                                            input)
+                                        (reset-input receiver-cell (merger receiver-cell))))
+                                     ((eq decision :reject)
+                                      (reset-input receiver-cell (merger receiver-cell)))
+                                     ((eq decision :wait)
+                                      (reset-input receiver-cell (merger receiver-cell)))))
+                            (finish))
+                        (iterate
+                          (for sink in (sinks receiver-cell))
+                          (send-message receiver-cell sink message)))
+                    (configuration-error (e) (declare (ignore e))
+                      nil)))
+             (when (= (~> receiver-cell finished-channels hash-table-count)
+                      (reduce #'+ (pipes receiver-cell) :key (compose #'length #'connected-sinks)))
+               (notify-end receiver-cell)))))
     (lparallel.queue:push-queue #'impl (queue receiver-cell))
     (lparallel.queue:push-queue nil (queue receiver-cell))))
 
@@ -194,8 +197,9 @@
                                                          (acceptor receiver-cell)
                                                          (input receiver-cell))))
                          (econd ((eq decision :accept)
-                                 (perform-action receiver-cell (input receiver-cell))
-                                 (reset-input receiver-cell (merger receiver-cell)))
+                                 (perform-action (merger receiver-cell)
+                                                 receiver-cell
+                                                 (input receiver-cell)))
                                 ((eq decision :reject)
                                  (reset-input receiver-cell (merger receiver-cell)))
                                 ((eq decision :wait)

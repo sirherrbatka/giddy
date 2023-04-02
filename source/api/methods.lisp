@@ -2,33 +2,22 @@
 
 
 (defmethod protocol:form-input ((cell protocol:action-cell)
-                                (merger list-merger))
-
-  (let* ((pipes (protocol:pipes cell))
-         (locks (mapcar (compose #'bt:acquire-lock #'protocol:lock)
-                        pipes))
-         (queues (mapcar (lambda (pipe) (cl-ds:replica (protocol:queue pipe) t))
-                         pipes)))
-    (unwind-protect
-         (let* ((messages '())
-                (input (make-hash-table :test 'eq)))
-           (when (endp pipes)
-             (error 'protocol:no-pipes))
-           (iterate
-             (for pipe in pipes)
-             (for pipe-name = (protocol:name pipe))
-             (for queue in queues)
-             (cl-ds:mod-bind (container found value) (cl-ds:take-out-front! queue)
-               (unless found
-                 (return-from protocol:form-input (values nil messages)))
-               (push value messages)
-               (push (protocol:content value) (gethash pipe-name input))))
-           (setf (protocol:input cell) (apply (implementation merger)
-                                              (protocol:input cell)
-                                              (hash-table-plist input)))
-           (map nil
-             (lambda (pipe queue) (setf (protocol:queue pipe) queue))
-             pipes
-             queues)
-           (return-from protocol:form-input (values messages messages)))
-      (map nil #'bt:release-lock locks))))
+                                (merger list-merger)
+                                &optional (message nil message-p) sink pipe)
+  (declare (ignore sink))
+  (bind ((input.messages
+          (ensure (protocol:input cell)
+            (iterate
+              (with result = (make-hash-table :test 'eq))
+              (for pipe in (protocol:pipes cell))
+              (setf (gethash (protocol:name pipe) result) '())
+              (finally (return (cons result '())))))))
+    (when message-p
+      (push (protocol:content message)
+            (gethash (protocol:name pipe) (car input.messages)))
+      (push message (cdr input.messages)))
+    (if (block m
+          (~>> input.messages car (maphash-values (lambda (v) (when (endp v) (return-from m nil)))))
+          t)
+        (values (~> input.messages car hash-table-plist) t (cdr input.messages))
+        (values nil nil nil))))
