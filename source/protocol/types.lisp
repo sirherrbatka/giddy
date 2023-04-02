@@ -62,12 +62,13 @@
            :initform nil)
    (%finished-channels :initform (make-hash-table :test 'equal)
                        :reader finished-channels)
-   (%queue :initform (lparallel.queue:make-queue)
+   (%queue :initarg :queue
            :reader queue)
    (%lock :reader lock
           :initform (bt:make-lock)))
   (:default-initargs
    :merger nil
+   :queue (lparallel.queue:make-queue)
    :acceptor nil))
 
 (defclass flownet (fundamental-cell)
