@@ -20,8 +20,15 @@
           (~>> input.messages car (maphash-values (lambda (v) (when (endp v) (return-from m nil)))))
           t)
         (values (~> input.messages car hash-table-plist) t (cdr input.messages))
-        (values nil nil nil))))
+        (values nil nil (cdr input.messages)))))
+
+(defmethod protocol:reset-input ((cell protocol:action-cell)
+                                 (merger list-merger))
+  (clrhash (protocol:input cell)))
 
 (defmethod protocol:perform-action ((cell collecting-cell) merger input)
   (vector-push-extend input (result cell))
   t)
+
+(defmethod protocol:perform-action ((cell callback-cell) merger input)
+  (funcall (callback cell) input))

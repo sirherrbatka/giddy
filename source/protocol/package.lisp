@@ -21,6 +21,7 @@
    #:pipe
    #:no-such-sink
    #:no-such-pipe
+   #:reset-input
    #:name
    #:queue
    #:pipes-lock

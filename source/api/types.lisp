@@ -10,3 +10,7 @@
   ((%result :initarg :resut
             :reader result))
   (:default-initargs :result (vect)))
+
+(defclass callback-cell (protocol:action-cell)
+  ((%callback :initarg :callback
+              :reader callback)))

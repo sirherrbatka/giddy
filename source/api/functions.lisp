@@ -9,3 +9,6 @@
                                  :content content
                                  :sender cell
                                  :connection-name name))))
+
+(defmethod reset-input (&aux (cell protocol:*cell*))
+  (protocol:reset-input cell (protocol:merger cell)))
