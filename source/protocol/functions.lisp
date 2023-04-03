@@ -1,26 +1,25 @@
 (cl:in-package #:giddy.protocol)
 
 
-(defun make-message (sender connection-name content)
-  (make 'message
-        :sender sender
-        :connection-name connection-name
-        :content content))
-
-(defun make-flownet (class sink-names pipe-names &rest cells)
-  (make-instance class
-                 :cells cells
-                 :sink-names sink-names
-                 :pipe-names pipe-names))
-
 (defun run-flownet (*flownet* function)
-  (let ((threads (make-threads *flownet*)))
+  (let ((threads (make-threads *flownet*))
+        (killed nil))
     (unwind-protect
-         (funcall function)
-      (mapcar #'bt:join-thread threads)
-      (iterate
-        (with lock = (bt:make-lock))
-        (until (bt:with-lock-held ((lock *flownet*))
-                 (endp (active-cells *flownet*))))
-        (bt:condition-wait (condition-variable *flownet*) lock)))
+         (handler-case
+             (funcall function)
+           (error (e)
+             (map nil
+                  (lambda (thread) (ignore-errors (bt:destroy-thread thread)))
+                  threads)
+             (setf killed t)
+             (error e)))
+      (map nil
+           (lambda (thread) (ignore-errors (bt:join-thread thread)))
+           threads)
+      (unless killed
+        (iterate
+          (with lock = (bt:make-lock))
+          (until (bt:with-lock-held ((lock *flownet*))
+                   (endp (active-cells *flownet*))))
+          (bt:condition-wait (condition-variable *flownet*) lock))))
        *flownet*))

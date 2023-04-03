@@ -7,4 +7,6 @@
    #:reset-input
    #:respond
    #:send
+   #:respond
+   #:execute
    #:list-merger))
