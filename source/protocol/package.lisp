@@ -18,6 +18,7 @@
    #:no-pipes
    #:with-flownet
 
+   #:end-message
    #:sink
    #:pipe
    #:no-such-sink
@@ -33,6 +34,7 @@
    #:lock
    #:sender
    #:content
+   #:run-flownet
    #:sinks
    #:sinks-hash-table
    #:pipes-hash-table

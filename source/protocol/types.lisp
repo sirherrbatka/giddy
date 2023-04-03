@@ -43,19 +43,22 @@
              :accessor flownet)
    (%sinks :reader sinks)
    (%pipes :reader pipes)
-   (%sink-names :reader sink-names)
-   (%pipe-names :reader pipe-names)
+   (%sink-names :reader sink-names
+                :initarg :sink-names)
+   (%pipe-names :reader pipe-names
+                :initarg :pipe-names)
    (%sinks-hash-table :reader sinks-hash-table)
    (%pipes-hash-table :reader pipes-hash-table))
-  (:default-initargs :flownet nil))
+  (:default-initargs
+   :flownet nil
+   :sink-names '()
+   :pipe-names '()))
 
 (defclass action-cell (fundamental-cell)
-  ((%sink-names :initarg :sink-names
-                :reader sink-names)
-   (%pipe-names :initarg :pipe-names
-                :reader pipe-names)
-   (%acceptor :reader acceptor
+  ((%acceptor :reader acceptor
               :initarg :acceptor)
+   (%name :reader name
+          :initarg :name)
    (%merger :reader merger
             :initarg :merger)
    (%input :accessor input
@@ -67,6 +70,7 @@
    (%lock :reader lock
           :initform (bt:make-lock)))
   (:default-initargs
+   :name nil
    :merger nil
    :queue (lparallel.queue:make-queue)
    :acceptor nil))

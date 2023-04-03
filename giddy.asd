@@ -23,4 +23,5 @@
                              (:file "generics")
                              (:file "types")
                              (:file "methods")
-                             (:file "functions")))))
+                             (:file "functions")
+                             (:file "macros")))))

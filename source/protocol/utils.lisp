@@ -7,5 +7,6 @@
                               (iterate
                                 (for callback = (lparallel.queue:pop-queue queue))
                                 (until (null callback))
-                                (funcall callback)))))
+                                (funcall callback)))
+                            :name (name cell)))
           (cells flownet)))
