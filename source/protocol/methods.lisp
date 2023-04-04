@@ -112,6 +112,8 @@
                           (for sink in (sinks receiver-cell))
                           (send-message receiver-cell sink message)))
                     (configuration-error (e) (declare (ignore e))
+                      nil)
+                    (error (e) (declare (ignore e))
                       nil)))
              (iterate
                (for sink in (sinks receiver-cell))
@@ -158,6 +160,8 @@
                                       (reset-input receiver-cell (merger receiver-cell)))))
                             (finish)))
                     (configuration-error (e) (declare (ignore e))
+                      nil)
+                    (error (e) (declare (ignore e))
                       nil)))
              (when (= (~> receiver-cell finished-channels hash-table-count)
                       (reduce #'+ (pipes receiver-cell) :key (compose #'length #'connected-sinks)))
