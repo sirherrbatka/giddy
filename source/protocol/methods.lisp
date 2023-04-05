@@ -120,6 +120,25 @@
                (send-message receiver-cell sink message)))))
     (lparallel.queue:push-queue #'impl (queue receiver-cell))))
 
+(defmethod notify-error ((cell fundamental-cell)
+                         messages
+                         error)
+  (when-let ((flownet (flownet cell)))
+    (~> messages
+        (cl-ds.alg:group-by :key (juxt #'sender #'connection-name)
+                            :test 'equal)
+        cl-ds.alg:to-list
+        (cl-ds:traverse (lambda (group.messages)
+                          (bind ((((sender connection-name) . messages) group.messages)
+                                 (container  (make 'error-container
+                                                   :stored-error error
+                                                   :sender cell
+                                                   :messages messages)))
+                            (declare (ignore sender connection-name))
+                            (bt:with-lock-held ((lock flownet))
+                              (vector-push-extend container
+                                                  (errors error)))))))))
+
 (defmethod notify-end ((cell fundamental-cell))
   (remove-active-cell (flownet cell) cell))
 
@@ -159,10 +178,10 @@
                                      ((eq decision :wait)
                                       (reset-input receiver-cell (merger receiver-cell)))))
                             (finish)))
-                    (configuration-error (e) (declare (ignore e))
-                      nil)
-                    (error (e) (declare (ignore e))
-                      nil)))
+                    (error (e)
+                      (notify-error receiver-cell
+                                    (or messages (list message))
+                                    e))))
              (when (= (~> receiver-cell finished-channels hash-table-count)
                       (reduce #'+ (pipes receiver-cell) :key (compose #'length #'connected-sinks)))
                (notify-end receiver-cell)
@@ -199,8 +218,10 @@
                               ((eq decision :wait)
                                nil)))
                      nil))
-             (configuration-error (e) (declare (ignore e))
-               nil))))
+             (error (e)
+               (notify-error receiver-cell
+                             (or messages (list message))
+                             e)))))
     (lparallel.queue:push-queue #'impl (queue receiver-cell))))
 
 (defmethod react-to-message ((receiver-cell action-cell)

@@ -14,6 +14,14 @@
 (defclass control-message (fundamental-message)
   ())
 
+(defclass error-container ()
+  ((%stored-error :initarg :stored-error
+                  :reader stored-error)
+   (%sender :initarg :sender
+                   :reader sender)
+   (%messages :initarg :messages
+              :reader messages)))
+
 (defclass flush-message (control-message)
   ())
 
@@ -82,6 +90,8 @@
                   :initarg :cells)
    (%lock :initform (bt:make-lock)
           :reader lock)
+   (%errors :initform (vect)
+            :reader errors)
    (%condition-variable :initform (bt:make-condition-variable)
                         :reader condition-variable)))
 
